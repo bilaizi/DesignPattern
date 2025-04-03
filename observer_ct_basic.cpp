@@ -1,8 +1,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <functional>
-#include <stm32f072xb.h>
-
 
 struct display {
     static void update(float temp) {
