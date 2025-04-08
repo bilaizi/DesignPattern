@@ -1,84 +1,80 @@
+//cross_platform_graphics_rendering.cpp
 #include <iostream>
+#include <memory>
 #include <string>
-#include <vector>
-#include "Person.h"
-using namespace std;
 
-// two classes of objects
-
-// Renderers - determine how an object is drawn
-// Shapes - determine what to draw
-
-struct Renderer
-{
-  virtual void render_circle(float x, float y, float radius) = 0;
-};
-
-struct VectorRenderer : Renderer
-{
-  void render_circle(float x, float y, float radius) override
-  {
-    cout << "Drawing a vector circle of radius " << radius << endl;
-  }
-};
-
-struct RasterRenderer : Renderer
-{
-  void render_circle(float x, float y, float radius) override
-  {
-    cout << "Rasterizing circle of radius " << radius << endl;
-  }
-};
-
-struct Shape
-{
-protected:
-  Renderer& renderer;
-  Shape(Renderer& renderer) : renderer{ renderer } {}
+// Step 1: Implementor interface
+class Renderer {
 public:
-  virtual void draw() = 0; // implementation specific
-  virtual void resize(float factor) = 0; // abstraction specific
+    virtual void renderCircle(float radius) = 0;
+    virtual void renderSquare(float side) = 0;
+    virtual ~Renderer() = default;
 };
 
-struct Circle : Shape
-{
-  float x, y, radius;
-
-  void draw() override
-  {
-    renderer.render_circle(x, y, radius);
-  }
-
-  void resize(float factor) override
-  {
-    radius *= factor;
-  }
-
-  Circle(Renderer& renderer, float x, float y, float radius)
-    : Shape{renderer},
-      x{x},
-      y{y},
-      radius{radius}
-  {
-  }
+// Step 2: Concrete Implementors
+class OpenGLRenderer : public Renderer {
+public:
+    void renderCircle(float radius) override {
+        std::cout << "Rendering circle with radius " << radius << " using OpenGL." << std::endl;
+    }
+    void renderSquare(float side) override {
+        std::cout << "Rendering square with side " << side << " using OpenGL." << std::endl;
+    }
 };
 
-void bridge()
-{
-  RasterRenderer rr;
-  Circle raster_circle{ rr, 5,5,5 };
-  raster_circle.draw();
-  raster_circle.resize(2);
-  raster_circle.draw();
-}
+class DirectXRenderer : public Renderer {
+public:
+    void renderCircle(float radius) override {
+        std::cout << "Rendering circle with radius " << radius << " using DirectX." << std::endl;
+    }
+    void renderSquare(float side) override {
+        std::cout << "Rendering square with side " << side << " using DirectX." << std::endl;
+    }
+};
 
-int main()
-{
-  
+// Step 3: Abstraction
+class Shape {
+protected:
+    std::shared_ptr<Renderer> renderer;
+public:
+    Shape(std::shared_ptr<Renderer> renderer) : renderer(renderer) {}
+    virtual void draw() = 0;
+    virtual ~Shape() = default;
+};
 
-  Person p;
-  p.greet();
+// Step 4: Refined Abstractions
+class Circle : public Shape {
+private:
+    float radius;
+public:
+    Circle(std::shared_ptr<Renderer> renderer, float radius)
+        : Shape(renderer), radius(radius) {}
+    void draw() override {
+        renderer->renderCircle(radius);
+    }
+};
 
-  getchar();
-  return 0;
+class Square : public Shape {
+private:
+    float side;
+public:
+    Square(std::shared_ptr<Renderer> renderer, float side)
+        : Shape(renderer), side(side) {}
+    void draw() override {
+        renderer->renderSquare(side);
+    }
+};
+
+// Step 5 & 6: Client code
+int main() {
+    std::shared_ptr<Renderer> opengl = std::make_shared<OpenGLRenderer>();
+    std::shared_ptr<Renderer> directx = std::make_shared<DirectXRenderer>();
+
+    Circle circleOpenGL(opengl, 5.0f);
+    Square squareDirectX(directx, 4.0f);
+
+    circleOpenGL.draw();
+    squareDirectX.draw();
+
+    return 0;
 }
